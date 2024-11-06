@@ -1,93 +1,97 @@
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-let countdown = 0; // 倒计时变量
+const video = document.getElementById('video'); // Get the video element
+const canvas = document.getElementById('canvas'); // Get the canvas element
+const ctx = canvas.getContext('2d'); // Get the 2D context of the canvas
+let countdown = 0; // Countdown variable
 
-// 设置马赛克效果的参数
-const tileSize = 25;
+// Set the parameters for the mosaic effect
+const tileSize = 25; // Size of each mosaic tile
 
-// 初始化摄像头
+// Initialize the webcam
 async function initCamera() {
+    // Request access to the webcam
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    video.srcObject = stream;
+    video.srcObject = stream; // Set the webcam stream as the video source
 
+    // When the video data is loaded, set the canvas size and start rendering frames
     video.addEventListener('loadeddata', () => {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        requestAnimationFrame(renderFrame);
+        canvas.width = video.videoWidth; // Set canvas width to video width
+        canvas.height = video.videoHeight; // Set canvas height to video height
+        requestAnimationFrame(renderFrame); // Start the rendering loop
     });
 }
 
-// 渲染彩色马赛克效果
+// Render the colorful mosaic effect
 function renderFrame() {
-    // 将视频帧绘制到 canvas 上
+    // Draw the current video frame onto the canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // 获取图像数据
+    // Get the image data from the canvas
     const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = frame.data;
 
-    // 处理图像的每个小方块
+    // Process each tile in the image
     for (let y = 0; y < canvas.height; y += tileSize) {
         for (let x = 0; x < canvas.width; x += tileSize) {
-            // 计算每块的平均RGB值
+            // Calculate the average RGB values for each tile
             let sumR = 0, sumG = 0, sumB = 0;
             let count = 0;
 
+            // Loop through each pixel in the tile
             for (let dy = 0; dy < tileSize; dy++) {
                 for (let dx = 0; dx < tileSize; dx++) {
                     const i = ((y + dy) * canvas.width + (x + dx)) * 4;
-                    sumR += data[i];
-                    sumG += data[i + 1];
-                    sumB += data[i + 2];
+                    sumR += data[i]; // Sum up red values
+                    sumG += data[i + 1]; // Sum up green values
+                    sumB += data[i + 2]; // Sum up blue values
                     count++;
                 }
             }
 
+            // Calculate the average RGB values
             const avgR = sumR / count;
             const avgG = sumG / count;
             const avgB = sumB / count;
 
-            // 绘制彩色方块
+            // Draw the colorful tile on the canvas
             ctx.fillStyle = `rgb(${avgR}, ${avgG}, ${avgB})`;
             ctx.fillRect(x, y, tileSize, tileSize);
         }
     }
 
-    // 显示倒计时（仅在倒计时未结束时显示）
+    // Display the countdown if it is greater than 0
     if (countdown > 0) {
-        ctx.font = "48px Arial Black";
-        ctx.fillStyle = "white";
-        ctx.textAlign = "center";
-        ctx.fillText(countdown, canvas.width / 2, canvas.height / 2);
+        ctx.font = "48px Arial Black"; // Set font style and size
+        ctx.fillStyle = "white"; // Set text color
+        ctx.textAlign = "center"; // Center the text
+        ctx.fillText(countdown, canvas.width / 2, canvas.height / 2); // Draw the countdown number
     }
 
-    // 请求下一帧
+    // Request the next frame to keep the loop going
     requestAnimationFrame(renderFrame);
 }
 
-// 截屏并下载
+// Take a screenshot and download it
 function takeScreenshot() {
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/png');
-    link.download = `screenshot_${Date.now()}.png`;
-    link.click();
+    const link = document.createElement('a'); // Create a new link element
+    link.href = canvas.toDataURL('image/png'); // Convert the canvas to a data URL
+    link.download = `screenshot_${Date.now()}.png`; // Set the file name for download
+    link.click(); // Simulate a click to download the image
 }
 
-// 监听按键事件
+// Listen for keydown events
 document.addEventListener('keydown', (event) => {
-    if (event.key === '1') { // 按下“1”键启动倒计时
-        countdown = 3;
+    if (event.key === '1') { // If the "1" key is pressed, start the countdown
+        countdown = 3; // Set countdown to 3 seconds
         const countdownInterval = setInterval(() => {
-            countdown--;
+            countdown--; // Decrease the countdown value
             if (countdown === 0) {
-                // 倒计时结束时，清除画面上的数字
-                renderFrame(); // 清空画面上的倒计时数字
-                clearInterval(countdownInterval);
-                takeScreenshot(); // 截屏
+                // When countdown reaches 0, clear the countdown and take a screenshot
+                renderFrame(); // Clear the countdown number from the screen
+                clearInterval(countdownInterval); // Stop the interval
+                takeScreenshot(); // Capture the screenshot
             }
-        }, 1000);
+        }, 1000); // Decrease countdown every second
     }
 });
 
-initCamera();
+initCamera(); // Initialize the camera
